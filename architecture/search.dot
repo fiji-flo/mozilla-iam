@@ -1,0 +1,34 @@
+digraph {
+    subgraph cluster_ss {
+        label="Search Service";
+        ss_api[label="REST API"];
+        ss_evt_lstnr[label="Event Listener"];
+        ss_search[label="Search"];
+        ss_update[label="Update"];
+
+        ss_evt_lstnr -> ss_update;
+        ss_api -> ss_search;
+}
+    subgraph cluster_es {
+        label="Elastic Search";
+
+        es_public_idx[label="Publuc"];
+
+        es_contributor_idx[label="TBD (Contributor)"];
+
+        es_nda_idx[label="Mozila Confidential"];
+
+        es_staff_idx[label="Workgroup Confidential - Staff"];
+
+    }
+
+    ss_search -> es_public_idx[label="read"];
+    ss_search -> es_contributor_idx[label="read"];
+    ss_search -> es_nda_idx[label="read"];
+    ss_search -> es_staff_idx[label="read"];
+
+    ss_update -> es_public_idx[label="write"];
+    ss_update -> es_contributor_idx[label="write"];
+    ss_update -> es_nda_idx[label="write"];
+    ss_update -> es_staff_idx[label="write"];
+}
