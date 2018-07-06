@@ -132,6 +132,11 @@ The search service will be built on top of elastic search. It should provide the
 The search service will only be accessible by Mozillians, profile publisher and integrity checker.
 Ideally we store raw profile v2 data and just add some prefixed properties if necessary.
 
+#### Profile Updates
+
+The search service will have an endpoint to receive profile updates. This endpoint will insert or
+update the profile it received.
+
 #### Privacy Levels
 
 The search service will be responsible of filtering fields according to privacy settings. We have
@@ -141,3 +146,75 @@ two proposals on how we can achieve this.
    every insertion of data.
 2. We use a single index and include privacy filters in the search query and do filter fields in the
    result set. This enables simple insertion but requires more work during search time.
+
+
+### Profile Publisher
+
+The profile publisher is the central broker for dealing with profile updates. Its main
+responsibilities are:
+
+- receive user created updates from Mozillians and send them to CIS
+  - the request/respond cycle will wait until the profile was successfully updated in CIS or an
+    error/timeout occurred
+- receive update events from CIS and send profile updates to [search service](#search-service)
+  and [orgchart service](#orgchart-service)
+
+The profile publisher will be implemented in an async mindset. Since it's mainly IO bound this
+will allow us to scale vertically for a long time.
+
+
+### Orgchart Service
+
+The orgchart service will serve any information necessary to render (parts of) the organizational
+structure of Mozilla.
+
+It's to be determined what technology will back this. We will focus on having a stable API.
+
+It exposes the following data profile v2 properties:
+- `user_id`
+- `first_name`
+- `last_name`
+- `business_title`
+- `team`
+- `company`
+- `office_location`
+
+
+## Integrity Checker
+
+In order to verify the integrity of the profile data in [search service](#search-service) and
+[orgchart service](#orgchart-service) we need a service that does either:
+
+- continuously checks random profiles
+- periodically checks all profiles
+
+This can be done by having a separate endpoint that provides a signature / checksum of profiles.
+
+If any integrity errors occur at any time this should raise an alarm. In order to resolve the issue
+we re-populate all data in the downstream services.
+
+
+## CIS requirements
+
+### Profile Updates from Mozillians
+
+Currently this is done via [CIS](https://github.com/mozilla-iam/cis) as a library in Mozillians.
+We like to change this to one of the following options:
+
+1. Have a separate service and an endpoint to publish profile updates.
+2. Have a lightweight async client for this.
+3. Validate a sign within [profile publisher](#profile-publisher) and invoke the lambda directly.
+
+#### Requirements
+
+Since we agreed on treating CIS / the Identity Vault as our single source of truth we need to know
+whether the profile update was successful. To achieve this we need to get a Kinesis sequence number
+as a response and an endpoint to poll for a status of the update. Alternatively, we provide a web
+hook that is invoked and sends the status. To achieve a fluent UX this should happen within the
+hundreds of milliseconds.
+
+
+### Profile Updates from external Sources
+
+Whenever a profile update from HRIS or LDAP or anything else happens CIS is responsible to invoke a
+web hook.
