@@ -1,4 +1,4 @@
-# Mozillians.org Repositioning Architechture
+# Mozillians.org Repositioning Architecture
 
 ## Mozillians.org Services
 
@@ -6,12 +6,12 @@
 
 #### GraphQL
 
-We stated a discussion around wether we want to test [GraphQL](https://graphql.org/) as our API
+We stated a discussion around whether we want to test [GraphQL](https://graphql.org/) as our API
 query language. Could be a great fit and we plan to give it a shot.
 
 #### Node, Python, Rust
 
-We want to use whatever technologie fits our needs. If it makes sense to write a small service in
+We want to use whatever technology fits our needs. If it makes sense to write a small service in
 in Node or Rust we encourage it.
 
 
@@ -28,7 +28,7 @@ A new front-end to render the new pages:
 #### Technologies
 
 - We plan to implement the new front-end using [Vue](https://vuejs.org).
-- We use components throughout accross all pages
+- We use components throughout across all pages
 - We plan to use global CSS instead of using components because we embrace the
   [cascade](https://developer.mozilla.org/en-US/docs/Web/CSS/Cascade)
 - Server side rendering is put on hold for now
@@ -39,7 +39,7 @@ Will we support IE11?
 
 #### Soft Goals
 
-- Encourage community engagement by having a simple leightweight dev setup
+- Encourage community engagement by having a simple lightweight dev setup
   - Ideally we have mocks for all APIs
 - Have a non-JS fallback.
   - Either server side rendering or
@@ -76,7 +76,7 @@ How we'll handle groups in phase 1.
 - single profile view
 - profile (section) edit
 - search
-- search autocomplete / suggestions
+- search auto-complete / suggestions
 - orgchart
 
 #### Scenarios
@@ -84,20 +84,20 @@ How we'll handle groups in phase 1.
 ##### Viewing a Profile
 
 - user visits https://mozillians.org/en-US/u/fiji/
-- hits django
+- hits Django
 - gets view with new front-end
-- new front-end requests profile data from API (django)
+- new front-end requests profile data from API (Django)
 - retrieving data from [search service](#search-service) and ([orgchart service](#orgchart-service))
-- repsonds according to permission level
+- responds according to permission level
 - new front-end renders profile view
 
 ##### Editing a Profile
 
 - user is on the edit profile view
 - user clicks on ✎ in a section of their profile
-- hits django
+- hits Django
 - gets view with new front-end
-- new front-end requests edit profile section data from API (django)
+- new front-end requests edit profile section data from API (Django)
 - new front-end renders edit profile section view
 - user changes value
 - user clicks on save button
@@ -107,11 +107,37 @@ How we'll handle groups in phase 1.
 
 ##### Searching
 
-- user enters something in the searchbar on any page
-- while typing the new front-end queries the suggestion api for suggestions
-- django queries search service according to users permissions for suggestions
+- user enters something in the search bar on any page
+- while typing the new front-end queries the suggestion API for suggestions
+- Django queries search service according to users permissions for suggestions
 - front-end displays suggestions
 - user hits enter / clicks on search / clicks on a suggested search
 - font-end sends search query to search API
-- django queries search service according to users permissions
-- new-front end renders search results and updates the searchbar to reflect the proper search syntax
+- Django queries search service according to users permissions
+- new-front end renders search results and updates the search bar to reflect the proper search syntax
+
+##### …
+
+
+### Search Service
+
+The search service will be built on top of elastic search. It should provide the following APIs:
+
+- query for an individual profile by username / user id and return the according profile data
+- a search that exposes most of ES syntax that returns results in one of two formats:
+  - list of usernames / user ids
+  - list of minimal profile data (everything needed to render a card)
+- suggestion / auto-complete for search
+
+The search service will only be accessible by Mozillians, profile publisher and integrity checker.
+Ideally we store raw profile v2 data and just add some prefixed properties if necessary.
+
+#### Privacy Levels
+
+The search service will be responsible of filtering fields according to privacy settings. We have
+two proposals on how we can achieve this.
+
+1. We use one index per privacy level. This enables simple search but we need to do the filtering on
+   every insertion of data.
+2. We use a single index and include privacy filters in the search query and do filter fields in the
+   result set. This enables simple insertion but requires more work during search time.
